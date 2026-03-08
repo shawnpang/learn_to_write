@@ -13,7 +13,7 @@ Steps:
    ```
    python3 -m src.scraper <handle> <max_posts>
    ```
-4. Read the output CSV from `data/<handle>.csv` and check how many posts we got.
+4. Read the output CSV from `data/<handle>/posts.csv` and check how many posts we got.
 5. **If the scraper got fewer than the target** (X limits anonymous browsing to ~30-60 posts), supplement with web search:
    - Run multiple web searches: `site:x.com/<handle>/status`, `"<display name>" site:x.com <topic>`, etc.
    - Extract tweet text from the search result titles (format: `Name on X: "tweet text" / X`)

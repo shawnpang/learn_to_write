@@ -11,10 +11,10 @@ pip install playwright && playwright install chromium
 
 ## How it works
 
-1. **Scraper** (`src/scraper.py` + `src/stealth.py`) — Playwright with stealth patches and human behavior simulation scrapes posts from any public X account. Outputs CSV to `data/`.
-2. **You (Claude Code)** — Read the CSV, analyze the writing style, and generate a Claude Scale. Save it to `scales/`.
+1. **Scraper** (`src/scraper.py` + `src/stealth.py`) — Playwright with stealth patches and human behavior simulation scrapes posts from any public X account. Outputs CSV to `data/<handle>/posts.csv`.
+2. **You (Claude Code)** — Read the CSV, analyze the writing style, and generate a Claude Scale. Save it to `data/<handle>/scale.md`.
 
-There is no separate analyzer or API script. Claude Code does the analysis and generation directly.
+Each person gets their own subfolder under `data/`. Everything is tracked in git.
 
 ## Slash commands
 
@@ -25,9 +25,17 @@ There is no separate analyzer or API script. Claude Code does the analysis and g
 
 ## File layout
 
-- `data/*.csv` — Scraped posts (text, timestamp, likes, retweets, replies)
-- `scales/*_scale.md` — Generated Claude Scales
-- `browser_profiles/` — Persistent browser state (cookies, cache)
+```
+data/
+  zarazhangrui/
+    posts.csv          # Scraped posts (text, timestamp, likes, retweets, replies)
+    scale.md           # Generated Claude Scale
+  anotherhandle/
+    posts.csv
+    scale.md
+```
+
+- `browser_profiles/` — Persistent browser state (cookies, cache) — gitignored
 - `src/scraper.py` — Scraper entry point: `python3 -m src.scraper <handle> [max_posts] [--visible]`
 - `src/stealth.py` — Browser stealth patches and human behavior simulation
 
@@ -46,4 +54,4 @@ python3 -m src.scraper <handle> [max_posts] [--visible]
 - The scraper NEVER logs in. It uses a fresh anonymous browser profile.
 - Images load normally (blocking is detectable).
 - Mouse moves on bezier curves, scrolling has natural variance, periodic breaks simulate real browsing.
-- CSV files use the format: `data/{handle}_{YYYYMMDD_HHMMSS}.csv`
+- Posts save to `data/<handle>/posts.csv`, scales save to `data/<handle>/scale.md`.

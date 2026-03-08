@@ -194,10 +194,16 @@ def scrape_account(
     return all_posts[:max_posts]
 
 
+def _handle_dir(handle: str) -> Path:
+    """Get or create the subfolder for a handle: data/{handle}/"""
+    d = DATA_DIR / handle
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def _load_existing_posts(handle: str) -> tuple[list[dict], set]:
     """Load posts from an existing CSV for this handle."""
-    DATA_DIR.mkdir(exist_ok=True)
-    csv_file = DATA_DIR / f"{handle}.csv"
+    csv_file = _handle_dir(handle) / "posts.csv"
     posts = []
     seen = set()
 
@@ -217,9 +223,8 @@ def _load_existing_posts(handle: str) -> tuple[list[dict], set]:
 
 
 def save_csv(handle: str, posts: list[dict]) -> Path:
-    """Save scraped posts to a single CSV file (overwrites previous)."""
-    DATA_DIR.mkdir(exist_ok=True)
-    filepath = DATA_DIR / f"{handle}.csv"
+    """Save scraped posts to data/{handle}/posts.csv."""
+    filepath = _handle_dir(handle) / "posts.csv"
 
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["text", "timestamp", "likes", "retweets", "replies"])

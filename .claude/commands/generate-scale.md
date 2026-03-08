@@ -7,7 +7,7 @@ allowed-tools: [Read, Write, Glob, Grep, Bash]
 Generate a Claude Scale for: $ARGUMENTS
 
 Steps:
-1. Find the most recent CSV for this handle in `data/`. If there are multiple, use the latest one.
+1. Read the CSV at `data/<handle>/posts.csv`.
 2. Read the entire CSV file.
 3. Analyze the writing style deeply. Look at ALL of the following:
 
@@ -92,6 +92,6 @@ Steps:
 
 5. Be EXTREMELY specific. Use actual quotes from their posts as evidence. The goal is that someone reading this scale could immediately write in this person's voice.
 
-6. Save the scale to `scales/<handle>_scale.md`.
+6. Save the scale to `data/<handle>/scale.md`.
 
 7. Report what you found and where the scale was saved.

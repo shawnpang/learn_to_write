@@ -27,16 +27,17 @@ This scrapes 300 posts, analyzes the writing style, and generates a Claude Scale
 ### Step by step
 
 ```
-/scrape @somehandle 300          # Scrape posts → data/somehandle_*.csv
-/generate-scale @somehandle      # Analyze CSV → scales/somehandle_scale.md
+/scrape @somehandle 300          # Scrape posts → data/somehandle/posts.csv
+/generate-scale @somehandle      # Analyze CSV → data/somehandle/scale.md
 /apply-scale @somehandle "Your content here"   # Rewrite in their style
 ```
 
 ### What you get
 
 ```
-data/somehandle_20260308_143022.csv    # Raw posts with engagement metrics
-scales/somehandle_scale.md             # The Claude Scale
+data/somehandle/
+  posts.csv    # Raw posts with engagement metrics
+  scale.md     # The Claude Scale
 ```
 
 ## What's a Claude Scale?
@@ -67,7 +68,7 @@ You can also paste a Claude Scale into any Claude conversation directly and it w
   collects posts into CSV             and generates the Claude Scale
        │                                     │
        ▼                                     ▼
-  data/{handle}.csv                   scales/{handle}_scale.md
+  data/{handle}/posts.csv                   data/{handle}/scale.md
 ```
 
 **Stage 1: Collect posts** — Two methods, used together:
@@ -96,8 +97,11 @@ learn_to_write/
 │   ├── __init__.py
 │   ├── scraper.py                   # Playwright scraper, outputs CSV
 │   └── stealth.py                   # Browser stealth + human simulation
-├── data/                            # Scraped CSVs (gitignored)
-├── scales/                          # Generated Claude Scales (gitignored)
+├── data/                            # One subfolder per person (posts.csv + scale.md)
+│   ├── zarazhangrui/
+│   │   ├── posts.csv
+│   │   └── scale.md
+│   └── ...
 └── browser_profiles/                # Persistent browser state (gitignored)
 ```
 

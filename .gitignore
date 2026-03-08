@@ -10,9 +10,6 @@ build/
 venv/
 env/
 
-# Scales (generated, can be re-created)
-scales/
-
 # Browser profiles (persistent state — cookies, cache, localStorage)
 browser_data/
 browser_profiles/
