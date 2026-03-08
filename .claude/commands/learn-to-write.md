@@ -1,5 +1,5 @@
 ---
-description: Full pipeline — scrape an X account, analyze style, generate Claude Scale
+description: Full pipeline — scrape an X account, analyze style, generate Claude Skill
 argument-hint: <@handle> [max_posts]
 allowed-tools: [Bash, Read, Write, Glob, Grep, WebSearch]
 ---
@@ -21,6 +21,6 @@ This is the all-in-one command. Steps:
 
 3. **Read**: Read the full CSV from `data/<handle>/posts.csv`.
 
-4. **Analyze & Generate Scale**: Analyze the writing style across all dimensions (length, structure, vocabulary, tone, formatting, engagement patterns). Then generate a comprehensive Claude Scale with all 9 sections (Voice Identity, Sentence Mechanics, Word Choice, Structural Patterns, Rhetorical Devices, Engagement Patterns, Distinctive Quirks, Rewrite Rules, Example Transformations). Be extremely specific — use actual quotes from posts as evidence. Save to `data/<handle>/scale.md`.
+4. **Analyze & Generate Skill**: Analyze the writing style across all dimensions (length, structure, vocabulary, tone, formatting, engagement patterns). Then generate a comprehensive Claude Skill with all 9 sections (Voice Identity, Sentence Mechanics, Word Choice, Structural Patterns, Rhetorical Devices, Engagement Patterns, Distinctive Quirks, Rewrite Rules, Example Transformations). Be extremely specific — use actual quotes from posts as evidence. Save to `data/<handle>/skill.md`.
 
-5. **Report**: Show a summary of what was found — key style characteristics, the most distinctive patterns, and where the scale was saved. Also show 2-3 of their best posts as examples.
+5. **Report**: Show a summary of what was found — key style characteristics, the most distinctive patterns, and where the skill was saved. Also show 2-3 of their best posts as examples.

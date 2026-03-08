@@ -1,10 +1,10 @@
 ---
-description: Analyze scraped posts and generate a Claude Scale
+description: Analyze scraped posts and generate a Claude Skill
 argument-hint: <@handle>
 allowed-tools: [Read, Write, Glob, Grep, Bash]
 ---
 
-Generate a Claude Scale for: $ARGUMENTS
+Generate a Claude Skill for: $ARGUMENTS
 
 Steps:
 1. Read the CSV at `data/<handle>/posts.csv`.
@@ -43,7 +43,7 @@ Steps:
    - Which posts got the most likes/retweets? What do they have in common?
    - Which posts got low engagement? What's different?
 
-4. Now generate the Claude Scale. This is a comprehensive, actionable writing style guide with these sections:
+4. Now generate the Claude Skill. This is a comprehensive, actionable writing style guide with these sections:
 
    ### 1. VOICE IDENTITY (2-3 sentences)
    A vivid description of the writer's overall voice.
@@ -90,8 +90,8 @@ Steps:
    ### 9. EXAMPLE TRANSFORMATIONS
    Take 3 generic statements and show how this person would write them.
 
-5. Be EXTREMELY specific. Use actual quotes from their posts as evidence. The goal is that someone reading this scale could immediately write in this person's voice.
+5. Be EXTREMELY specific. Use actual quotes from their posts as evidence. The goal is that someone reading this skill could immediately write in this person's voice.
 
-6. Save the scale to `data/<handle>/scale.md`.
+6. Save the skill to `data/<handle>/skill.md`.
 
-7. Report what you found and where the scale was saved.
+7. Report what you found and where the skill was saved.

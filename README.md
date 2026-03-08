@@ -1,6 +1,6 @@
 # learn_to_write
 
-Turn any X (Twitter) account into a reusable writing style. Scrape their posts, analyze the patterns, and generate a **Claude Scale** — a style guide that lets you write like anyone or transform any content to match their voice.
+Turn any X (Twitter) account into a reusable writing style. Scrape their posts, analyze the patterns, and generate a **Claude Skill** — a style guide that lets you write like anyone or transform any content to match their voice.
 
 Built for [Claude Code](https://claude.ai/claude-code). No API keys, no CLI to learn. Just slash commands.
 
@@ -22,14 +22,14 @@ That's it. Open the project in Claude Code and use the slash commands.
 /learn-to-write @somehandle 300
 ```
 
-This scrapes 300 posts, analyzes the writing style, and generates a Claude Scale. Everything saved automatically.
+This scrapes 300 posts, analyzes the writing style, and generates a Claude Skill. Everything saved automatically.
 
 ### Step by step
 
 ```
 /scrape @somehandle 300          # Scrape posts → data/somehandle/posts.csv
-/generate-scale @somehandle      # Analyze CSV → data/somehandle/scale.md
-/apply-scale @somehandle "Your content here"   # Rewrite in their style
+/generate-skill @somehandle      # Analyze CSV → data/somehandle/skill.md
+/apply-skill @somehandle "Your content here"   # Rewrite in their style
 ```
 
 ### What you get
@@ -37,10 +37,10 @@ This scrapes 300 posts, analyzes the writing style, and generates a Claude Scale
 ```
 data/somehandle/
   posts.csv    # Raw posts with engagement metrics
-  scale.md     # The Claude Scale
+  skill.md     # The Claude Skill
 ```
 
-## What's a Claude Scale?
+## What's a Claude Skill?
 
 A structured writing style guide with 9 sections:
 
@@ -56,7 +56,7 @@ A structured writing style guide with 9 sections:
 | **Rewrite Rules** | 5-7 concrete "When you see X, do Y" rules |
 | **Example Transformations** | 3 generic statements rewritten in their style |
 
-You can also paste a Claude Scale into any Claude conversation directly and it will adopt that voice.
+You can also paste a Claude Skill into any Claude conversation directly and it will adopt that voice.
 
 ## How it works
 
@@ -65,10 +65,10 @@ You can also paste a Claude Scale into any Claude conversation directly and it w
   ───────────────                     ──────────────────
   Playwright scraper                  Claude Code reads the CSV,
   + web search fallback               analyzes all writing patterns,
-  collects posts into CSV             and generates the Claude Scale
+  collects posts into CSV             and generates the Claude Skill
        │                                     │
        ▼                                     ▼
-  data/{handle}/posts.csv                   data/{handle}/scale.md
+  data/{handle}/posts.csv                   data/{handle}/skill.md
 ```
 
 **Stage 1: Collect posts** — Two methods, used together:
@@ -79,7 +79,7 @@ You can also paste a Claude Scale into any Claude conversation directly and it w
 
 Both sources merge into a single CSV. Run `/scrape` multiple times to accumulate more data.
 
-**Stage 2: Analyze + Generate** — Claude Code reads the CSV directly and does the analysis itself. No separate Python scripts, no API keys needed. Claude Code examines sentence structure, vocabulary, tone markers, formatting habits, and engagement patterns across all posts, then synthesizes a Claude Scale with concrete rewrite rules and example transformations.
+**Stage 2: Analyze + Generate** — Claude Code reads the CSV directly and does the analysis itself. No separate Python scripts, no API keys needed. Claude Code examines sentence structure, vocabulary, tone markers, formatting habits, and engagement patterns across all posts, then synthesizes a Claude Skill with concrete rewrite rules and example transformations.
 
 ## Project structure
 
@@ -90,17 +90,17 @@ learn_to_write/
 ├── requirements.txt                 # Just playwright
 ├── .claude/commands/
 │   ├── scrape.md                    # /scrape @handle [count]
-│   ├── generate-scale.md           # /generate-scale @handle
-│   ├── apply-scale.md              # /apply-scale @handle <text>
+│   ├── generate-skill.md           # /generate-skill @handle
+│   ├── apply-skill.md              # /apply-skill @handle <text>
 │   └── learn-to-write.md           # /learn-to-write @handle [count]
 ├── src/
 │   ├── __init__.py
 │   ├── scraper.py                   # Playwright scraper, outputs CSV
 │   └── stealth.py                   # Browser stealth + human simulation
-├── data/                            # One subfolder per person (posts.csv + scale.md)
+├── data/                            # One subfolder per person (posts.csv + skill.md)
 │   ├── zarazhangrui/
 │   │   ├── posts.csv
-│   │   └── scale.md
+│   │   └── skill.md
 │   └── ...
 └── browser_profiles/                # Persistent browser state (gitignored)
 ```
@@ -124,5 +124,5 @@ learn_to_write/
 
 - Only scrapes publicly visible content
 - No X login required or used
-- Scales are for learning and improving your own writing
+- Skills are for learning and improving your own writing
 - Don't use this to impersonate people
