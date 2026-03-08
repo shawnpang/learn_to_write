@@ -27,8 +27,8 @@ This scrapes 300 posts, analyzes the writing style, and generates a Claude Skill
 ### Step by step
 
 ```
-/scrape @somehandle 300          # Scrape posts → data/somehandle/posts.csv
-/generate-skill @somehandle      # Analyze CSV → data/somehandle/skill.md
+/scrape @somehandle 300              # Scrape + analyze + generate skill
+/generate-skill @somehandle          # Re-generate skill from existing data
 /apply-skill @somehandle "Your content here"   # Rewrite in their style
 ```
 

@@ -18,10 +18,10 @@ Each person gets their own subfolder under `data/`. Everything is tracked in git
 
 ## Slash commands
 
-- `/scrape @handle [count]` — Scrape posts from an X account, save as CSV
-- `/generate-skill @handle` — Read scraped CSV, analyze style, generate Claude Skill
+- `/scrape @handle [count]` — Scrape posts, analyze style, and generate Claude Skill in one step
+- `/generate-skill @handle` — Re-generate a Claude Skill from existing scraped data
 - `/apply-skill @handle <text>` — Rewrite text using a saved Claude Skill
-- `/learn-to-write @handle [count]` — Full pipeline: scrape + analyze + generate skill
+- `/learn-to-write @handle [count]` — Same as `/scrape` (alias)
 
 ## File layout
 
