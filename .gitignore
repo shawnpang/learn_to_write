@@ -10,14 +10,12 @@ build/
 venv/
 env/
 
-# Data & output
-data/*.json
-data/*.csv
-scales/*.md
-scales/*.json
+# Scales (generated, can be re-created)
+scales/
 
-# Browser
+# Browser profiles (persistent state — cookies, cache, localStorage)
 browser_data/
+browser_profiles/
 
 # Environment
 .env

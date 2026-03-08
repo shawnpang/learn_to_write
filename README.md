@@ -1,150 +1,53 @@
 # learn_to_write
 
-Turn any X (Twitter) account into a reusable writing style you can apply to anything.
+Turn any X (Twitter) account into a reusable writing style. Scrape their posts, analyze the patterns, and generate a **Claude Scale** — a style guide that lets you write like anyone or transform any content to match their voice.
 
-Scrape someone's posts, run a deep style analysis, and generate a **Claude Scale** — a portable prompt that captures exactly how they write. Use it to learn their techniques, or feed it to Claude to rewrite any content in their voice.
+Built for [Claude Code](https://claude.ai/claude-code). No API keys, no CLI to learn. Just slash commands.
 
-## The idea
+## Setup
 
-Everyone has a distinct writing voice. Short punchy takes. Long threaded breakdowns. Lowercase no-punctuation vibes. Formal and polished. The patterns are there — most people just can't articulate what makes a voice *that voice*.
-
-This tool reverse-engineers it. It reads hundreds of someone's posts, measures everything quantifiable about how they write, then uses Claude to synthesize it into a concrete, actionable style guide.
-
-## The pipeline
-
-There are three stages. Each one produces an artifact that feeds into the next.
-
-```
-  SCRAPE                    ANALYZE                   GENERATE
-  ──────                    ───────                   ────────
-  @handle                   Raw posts                 Style profile
-     │                         │                          │
-     ▼                         ▼                          ▼
-  Playwright               Statistical               Claude API
-  fresh browser            analysis                   synthesis
-     │                         │                          │
-     ▼                         ▼                          ▼
-  data/{handle}.json       data/{handle}_profile.json scales/{handle}_scale.md
-  (raw posts + metrics)    (quantified style)         (the Claude Scale)
+```bash
+git clone https://github.com/shawnpang/learn_to_write.git
+cd learn_to_write
+pip install playwright && playwright install chromium
 ```
 
-### Stage 1: Scrape (`src/scraper.py`)
+That's it. Open the project in Claude Code and use the slash commands.
 
-Playwright launches a **fresh Chromium instance** — no cookies, no login, no stored state. This is intentional: your real X account is never involved.
+## Usage
 
-What happens:
-1. Opens `x.com/{handle}` in a clean browser context with a realistic user agent, viewport (1920x1080), timezone, and locale
-2. Blocks all images, videos, and fonts to minimize bandwidth and speed up scrolling
-3. Dismisses any login prompts or cookie banners that X throws at anonymous visitors
-4. Scrolls the timeline repeatedly, extracting posts from the DOM after each scroll
-5. Deduplicates posts by their first 100 characters (X re-renders posts as you scroll)
-6. Stops when it hits the target count or when 5 consecutive scrolls produce no new posts
-7. Adds random delays (1-4 seconds) between actions to mimic human browsing
+### Full pipeline — one command
 
-For each post, it captures:
-- **Text content** (the actual post)
-- **Timestamp** (ISO datetime)
-- **Likes, retweets, replies** (engagement counts)
-- **Repost flag** (reposts are filtered out — we only want original writing)
-
-Output: `data/{handle}_{timestamp}.json`
-
-```json
-{
-  "handle": "somewriter",
-  "scraped_at": "20260307_143022",
-  "count": 247,
-  "posts": [
-    {
-      "text": "The best writing advice is just: delete more.",
-      "timestamp": "2026-02-15T09:23:00.000Z",
-      "likes": "2.4K",
-      "retweets": "312",
-      "replies": "89",
-      "is_repost": false
-    }
-  ]
-}
+```
+/learn-to-write @somehandle 300
 ```
 
-### Stage 2: Analyze (`src/analyzer.py`)
+This scrapes 300 posts, analyzes the writing style, and generates a Claude Scale. Everything saved automatically.
 
-Takes the raw posts and runs them through six analysis passes to build a quantified style profile.
+### Step by step
 
-**Length distribution** — Are they a one-liner person or a paragraph writer?
-- Average characters and words per post
-- What percentage of posts are short (<100 chars) vs. long (>200 chars)
-- Min/max range
-
-**Sentence structure** — How do they build posts?
-- Average sentences per post
-- How often they use line breaks, bullet lists, threads
-- What percentage open with a question
-
-**Vocabulary** — What words define their voice?
-- Top 30 most-used content words (stop words filtered out)
-- Unique word ratio (vocabulary diversity)
-- Average word length (simple vs. complex language)
-
-**Tone markers** — What's the energy?
-- Exclamation marks, question marks, ellipsis per post
-- ALL CAPS word frequency
-- Emoji, hashtag, @mention, and URL density
-- Informal language percentage (slang like "tbh", "ngl", "gonna")
-
-**Formatting habits** — The small things that define a voice
-- Do they start posts lowercase?
-- Do they skip ending punctuation?
-- Parenthetical asides, em dashes, quotation usage
-
-**Engagement correlation** — What actually works?
-- Top 10 highest-engagement posts (ranked by likes + 2x retweets)
-- 20 diverse sample posts picked across the length spectrum
-
-Output: `data/{handle}_profile.json`
-
-```json
-{
-  "total_posts": 247,
-  "length": {
-    "avg_chars": 156,
-    "avg_words": 28,
-    "short_posts_pct": 34,
-    "long_posts_pct": 22
-  },
-  "structure": {
-    "avg_sentences_per_post": 2.3,
-    "line_breaks_pct": 41,
-    "question_opener_pct": 18
-  },
-  "tone": {
-    "exclamation_marks_per_post": 0.8,
-    "emoji_count_per_post": 0.3,
-    "informal_pct": 12
-  },
-  "formatting": {
-    "starts_lowercase_pct": 45,
-    "no_period_ending_pct": 67
-  },
-  "vocabulary": {
-    "unique_word_ratio": 0.412,
-    "top_words": [["people", 89], ["think", 67], ["build", 54]],
-    "avg_word_length": 4.8
-  },
-  "top_posts": [...],
-  "sample_posts": [...]
-}
+```
+/scrape @somehandle 300          # Scrape posts → data/somehandle_*.csv
+/generate-scale @somehandle      # Analyze CSV → scales/somehandle_scale.md
+/apply-scale @somehandle "Your content here"   # Rewrite in their style
 ```
 
-### Stage 3: Generate (`src/scale_generator.py`)
+### What you get
 
-This is where the numbers become a voice. The style profile, top posts, and sample posts are sent to Claude with a detailed prompt asking it to produce a **Claude Scale** — a structured document with nine sections:
+```
+data/somehandle_20260308_143022.csv    # Raw posts with engagement metrics
+scales/somehandle_scale.md             # The Claude Scale
+```
+
+## What's a Claude Scale?
+
+A structured writing style guide with 9 sections:
 
 | Section | What it captures |
 |---------|-----------------|
 | **Voice Identity** | 2-3 sentence summary of who this writer is on the page |
 | **Sentence Mechanics** | Length, rhythm, punctuation, capitalization, line breaks |
-| **Word Choice & Vocabulary** | Register, signature phrases, jargon, slang |
+| **Word Choice** | Register, signature phrases, jargon, slang |
 | **Structural Patterns** | How they open, build, and close posts |
 | **Rhetorical Devices** | Questions, analogies, humor, emphasis, opinions |
 | **Engagement Patterns** | What gets traction, hooks, calls to action |
@@ -152,113 +55,70 @@ This is where the numbers become a voice. The style profile, top posts, and samp
 | **Rewrite Rules** | 5-7 concrete "When you see X, do Y" rules |
 | **Example Transformations** | 3 generic statements rewritten in their style |
 
-The scale is designed to work as a **system prompt**. Paste it into any Claude conversation and Claude will adopt that voice for everything it writes.
+You can also paste a Claude Scale into any Claude conversation directly and it will adopt that voice.
 
-Output: `scales/{handle}_scale.md`
+## How it works
 
-### Stage 4: Apply
-
-Once you have a scale, you can rewrite any text in that person's style. The scale is loaded as Claude's system prompt, and your content is sent as the user message with instructions to transform the voice while preserving the meaning.
-
-## Setup
-
-```bash
-git clone https://github.com/shawnpang/learn_to_write.git
-cd learn_to_write
-
-pip install -r requirements.txt
-playwright install chromium
-
-# Set your Anthropic API key
-cp .env.example .env
-# Edit .env and add your key
+```
+  SCRAPE + SEARCH                     ANALYZE + GENERATE
+  ───────────────                     ──────────────────
+  Playwright scraper                  Claude Code reads the CSV,
+  + web search fallback               analyzes all writing patterns,
+  collects posts into CSV             and generates the Claude Scale
+       │                                     │
+       ▼                                     ▼
+  data/{handle}.csv                   scales/{handle}_scale.md
 ```
 
-**Requirements:** Python 3.10+, an Anthropic API key
+**Stage 1: Collect posts** — Two methods, used together:
 
-## Usage
+1. **Playwright scraper** (`src/scraper.py` + `src/stealth.py`) — Launches stealth Chromium with persistent browser profiles, bezier mouse movement, variable scrolling, reading pauses, and human behavior simulation. Gets ~30-60 posts per session with full engagement data (likes, retweets, replies).
 
-### Run everything at once
+2. **Web search supplement** — X limits anonymous browsing, so Claude Code runs web searches to find additional tweets indexed by Google. Tweet text is extracted from search result titles. This can find hundreds of posts that the scraper can't reach.
 
-```bash
-python main.py pipeline somehandle --max-posts 300
-```
+Both sources merge into a single CSV. Run `/scrape` multiple times to accumulate more data.
 
-This scrapes, analyzes, and generates in sequence. At the end you get:
-```
-Data:    data/somehandle_20260307_143022.json
-Profile: data/somehandle_profile.json
-Scale:   scales/somehandle_scale.md
-```
-
-### Run each step separately
-
-Useful if you want to tweak the analysis or re-generate the scale with a different model.
-
-```bash
-# Step 1: Scrape posts
-python main.py scrape somehandle --max-posts 300
-
-# Step 2: Build style profile from scraped data
-python main.py analyze somehandle data/somehandle_20260307_143022.json
-
-# Step 3: Generate the Claude Scale from the profile
-python main.py generate somehandle data/somehandle_profile.json
-
-# Step 4: Rewrite content using the scale
-python main.py apply scales/somehandle_scale.md "Your content here"
-```
-
-### Options
-
-| Flag | Where | Description |
-|------|-------|-------------|
-| `--max-posts N` | scrape, pipeline | Number of posts to collect (default: 200) |
-| `--visible` | scrape, pipeline | Show the browser window while scraping |
-| `--model` | generate, apply, pipeline | Claude model to use (default: claude-sonnet-4-20250514) |
-
-### How to use a Claude Scale
-
-**Option A: CLI rewrite**
-```bash
-python main.py apply scales/somehandle_scale.md "We are launching a new product next week."
-```
-
-**Option B: Paste into Claude**
-Open the generated `.md` file, copy the contents, and paste it at the start of any Claude conversation. Everything Claude writes in that conversation will follow the style.
-
-**Option C: Use as a system prompt via the API**
-Load the scale file as the `system` parameter in your Anthropic API calls.
+**Stage 2: Analyze + Generate** — Claude Code reads the CSV directly and does the analysis itself. No separate Python scripts, no API keys needed. Claude Code examines sentence structure, vocabulary, tone markers, formatting habits, and engagement patterns across all posts, then synthesizes a Claude Scale with concrete rewrite rules and example transformations.
 
 ## Project structure
 
 ```
 learn_to_write/
-├── main.py                  # CLI — ties everything together
+├── CLAUDE.md                        # Project instructions for Claude Code
+├── README.md
+├── requirements.txt                 # Just playwright
+├── .claude/commands/
+│   ├── scrape.md                    # /scrape @handle [count]
+│   ├── generate-scale.md           # /generate-scale @handle
+│   ├── apply-scale.md              # /apply-scale @handle <text>
+│   └── learn-to-write.md           # /learn-to-write @handle [count]
 ├── src/
-│   ├── scraper.py           # Stage 1: Playwright scraper
-│   ├── analyzer.py          # Stage 2: Statistical style analysis
-│   └── scale_generator.py   # Stage 3: Claude Scale generation + apply
-├── data/                    # Scraped posts and style profiles (gitignored)
-├── scales/                  # Generated Claude Scales (gitignored)
-├── requirements.txt
-├── .env.example
-└── .gitignore
+│   ├── __init__.py
+│   ├── scraper.py                   # Playwright scraper, outputs CSV
+│   └── stealth.py                   # Browser stealth + human simulation
+├── data/                            # Scraped CSVs (gitignored)
+├── scales/                          # Generated Claude Scales (gitignored)
+└── browser_profiles/                # Persistent browser state (gitignored)
 ```
 
-## How the scraper stays safe
+## How the scraper avoids detection
 
-The scraper never touches your real X account. Every run:
-- Launches a brand new Chromium process with no persistent storage
-- Creates a fresh browser context (no cookies, no cache, no history)
-- Uses a generic user agent string — not your real browser fingerprint
-- Blocks media loading to reduce network footprint
-- Adds randomized human-like delays between scrolls
-- Only reads publicly visible posts — no authentication, no API keys for X
+**Your account is never involved.** No login, no cookies from your real browser, no X credentials.
+
+**The browser looks real.** Stealth patches hide every standard automation signal:
+- `navigator.webdriver` → `undefined` (Playwright normally sets this to `true`)
+- `window.chrome` runtime → present (missing in default Playwright)
+- `navigator.plugins` → 3 realistic Chrome plugins (Playwright shows 0)
+- WebGL renderer → real GPU string instead of "SwiftShader"
+- Media devices, connection info, permissions API → all match real Chrome
+
+**The browser has history.** Persistent profiles accumulate cookies, localStorage, and cache across runs. X sees a returning visitor, not a fresh install.
+
+**The behavior looks human.** Mouse on bezier curves, variable scroll distances with momentum, reading pauses that decrease over time (fatigue), random post clicks, periodic 5-15s breaks.
 
 ## Privacy & ethics
 
 - Only scrapes publicly visible content
-- No X account login required or used
-- Generated scales are for learning and improving your own writing
-- Don't use this to impersonate people — use it to learn what makes good writing work
+- No X login required or used
+- Scales are for learning and improving your own writing
+- Don't use this to impersonate people

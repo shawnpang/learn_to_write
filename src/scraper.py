@@ -1,44 +1,34 @@
 """
 Scrape posts from any public X (Twitter) account using Playwright.
-Uses a fresh browser context each run to avoid account association.
+Uses stealth patches, persistent browser profiles, and human behavior
+simulation to avoid bot detection. Never logs in — never touches your account.
+
+X limits anonymous browsing to ~30-60 posts per session. Running the scraper
+again merges new posts with existing data automatically.
 """
 
-import json
-import time
+from __future__ import annotations
+
+import csv
 import random
+import sys
 from pathlib import Path
 from datetime import datetime
-from playwright.sync_api import sync_playwright, Browser, BrowserContext
+from playwright.sync_api import sync_playwright
+
+from src.stealth import (
+    apply_stealth_scripts,
+    get_random_persona,
+    human_scroll,
+    human_pause,
+    simulate_reading,
+    warm_up_session,
+    _dismiss_overlays,
+)
 
 
 DATA_DIR = Path(__file__).parent.parent / "data"
-BROWSER_DATA_DIR = Path(__file__).parent.parent / "browser_data"
-
-
-def _random_delay(min_s: float = 1.0, max_s: float = 3.0):
-    """Human-like random delay between actions."""
-    time.sleep(random.uniform(min_s, max_s))
-
-
-def _create_fresh_context(browser: Browser) -> BrowserContext:
-    """Create a completely fresh browser context with realistic fingerprint."""
-    context = browser.new_context(
-        viewport={"width": 1920, "height": 1080},
-        user_agent=(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0.0.0 Safari/537.36"
-        ),
-        locale="en-US",
-        timezone_id="America/New_York",
-        color_scheme="light",
-    )
-    # Block unnecessary resources to speed up loading
-    context.route(
-        "**/*.{png,jpg,jpeg,gif,svg,mp4,webm,woff2,woff}",
-        lambda route: route.abort(),
-    )
-    return context
+PROFILES_DIR = Path(__file__).parent.parent / "browser_profiles"
 
 
 def _extract_posts(page) -> list[dict]:
@@ -80,56 +70,84 @@ def scrape_account(
     scroll_pause: float = 2.0,
 ) -> list[dict]:
     """
-    Scrape posts from an X account.
+    Scrape posts from an X account with stealth.
+
+    Uses a persistent browser profile so cookies accumulate across runs,
+    making the browser look like a returning visitor. Merges with any
+    existing scraped data for this handle.
 
     Args:
         handle: X username (without @)
         max_posts: Maximum number of posts to collect
         headless: Run browser in headless mode
-        scroll_pause: Seconds to wait between scrolls
+        scroll_pause: Base seconds between scrolls
 
     Returns:
         List of post dicts with text, timestamp, engagement metrics
     """
     handle = handle.lstrip("@")
-    all_posts = []
-    seen_texts = set()
+
+    # Load existing posts from previous runs
+    all_posts, seen_texts = _load_existing_posts(handle)
+    if all_posts:
+        print(f"Loaded {len(all_posts)} posts from previous runs.")
+        if len(all_posts) >= max_posts:
+            print(f"Already have {len(all_posts)} posts (target: {max_posts}). Done.")
+            return all_posts[:max_posts]
+
+    persona = get_random_persona()
+    profile_dir = PROFILES_DIR / "default"
+    profile_dir.mkdir(parents=True, exist_ok=True)
 
     with sync_playwright() as p:
-        # Launch fresh browser - no persistent storage
-        browser = p.chromium.launch(headless=headless)
-        context = _create_fresh_context(browser)
-        page = context.new_page()
+        context = p.chromium.launch_persistent_context(
+            user_data_dir=str(profile_dir),
+            headless=headless,
+            viewport=persona["viewport"],
+            user_agent=persona["user_agent"],
+            device_scale_factor=persona["device_scale_factor"],
+            locale=persona["locale"],
+            timezone_id=persona["timezone_id"],
+            color_scheme=persona["color_scheme"],
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-features=IsolateOrigins,site-per-process",
+                "--no-first-run",
+                "--no-default-browser-check",
+            ],
+        )
 
+        apply_stealth_scripts(context)
+        page = context.pages[0] if context.pages else context.new_page()
+
+        # Warm up — build cookies and referrer chain
+        warm_up_session(page)
+
+        # Navigate to profile
         print(f"Navigating to @{handle}...")
-        page.goto(f"https://x.com/{handle}", wait_until="networkidle", timeout=30000)
-        _random_delay(2.0, 4.0)
+        page.goto(f"https://x.com/{handle}", wait_until="domcontentloaded", timeout=30000)
 
-        # Dismiss any login prompts or cookie banners
+        # Wait for timeline to actually render
         try:
-            close_btn = page.locator('[data-testid="xMigrationBottomBar"] button')
-            if close_btn.is_visible(timeout=3000):
-                close_btn.click()
+            page.wait_for_selector('article[data-testid="tweet"]', timeout=15000)
         except Exception:
             pass
+        human_pause(3.0, 5.0)
 
-        try:
-            # Also try dismissing the "Sign in" overlay
-            page.keyboard.press("Escape")
-            _random_delay(0.5, 1.0)
-        except Exception:
-            pass
+        _dismiss_overlays(page)
+        simulate_reading(page, post_count=0)
 
         print(f"Scrolling and collecting posts (target: {max_posts})...")
         stall_count = 0
-        max_stalls = 5
+        max_stalls = 8
+        scroll_count = 0
 
         while len(all_posts) < max_posts:
             posts = _extract_posts(page)
             new_count = 0
 
             for post in posts:
-                text_key = post["text"][:100]  # dedupe by first 100 chars
+                text_key = post["text"][:100]
                 if text_key not in seen_texts:
                     seen_texts.add(text_key)
                     all_posts.append(post)
@@ -137,35 +155,112 @@ def scrape_account(
 
             if new_count == 0:
                 stall_count += 1
+                if stall_count >= 2:
+                    _dismiss_overlays(page)
+                    human_pause(1.0, 2.0)
                 if stall_count >= max_stalls:
-                    print(f"No new posts after {max_stalls} scrolls. Stopping.")
+                    print(f"  No new posts after {max_stalls} scrolls. Stopping.")
                     break
             else:
                 stall_count = 0
 
             print(f"  Collected {len(all_posts)}/{max_posts} posts...")
+            scroll_count += 1
 
-            # Scroll down
-            page.evaluate("window.scrollBy(0, window.innerHeight * 2)")
-            _random_delay(scroll_pause, scroll_pause + 1.5)
+            # Dismiss overlays periodically
+            if scroll_count % 3 == 0:
+                _dismiss_overlays(page)
+
+            simulate_reading(page, post_count=len(all_posts))
+
+            intensity = random.choice(["normal", "normal", "normal", "large", "small"])
+            human_scroll(page, direction="down", intensity=intensity)
+            human_pause(scroll_pause, scroll_pause + 2.0)
+
+            # Occasional scroll back up
+            if random.random() < 0.1:
+                human_scroll(page, direction="up", intensity="small")
+                human_pause(0.5, 1.5)
+
+            # Periodic longer breaks
+            if scroll_count % random.randint(20, 30) == 0:
+                pause_time = random.uniform(5.0, 15.0)
+                print(f"  Taking a {pause_time:.0f}s break...")
+                human_pause(pause_time, pause_time + 2.0)
 
         context.close()
-        browser.close()
 
-    print(f"Done. Scraped {len(all_posts)} posts from @{handle}.")
+    print(f"Done. Total: {len(all_posts)} unique posts from @{handle}.")
     return all_posts[:max_posts]
 
 
-def save_posts(handle: str, posts: list[dict]) -> Path:
-    """Save scraped posts to a JSON file."""
+def _load_existing_posts(handle: str) -> tuple[list[dict], set]:
+    """Load posts from an existing CSV for this handle."""
     DATA_DIR.mkdir(exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filepath = DATA_DIR / f"{handle}_{timestamp}.json"
-    with open(filepath, "w") as f:
-        json.dump(
-            {"handle": handle, "scraped_at": timestamp, "count": len(posts), "posts": posts},
-            f,
-            indent=2,
-        )
-    print(f"Saved to {filepath}")
+    csv_file = DATA_DIR / f"{handle}.csv"
+    posts = []
+    seen = set()
+
+    if csv_file.exists():
+        try:
+            with open(csv_file, encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    key = row["text"][:100]
+                    if key not in seen:
+                        seen.add(key)
+                        posts.append(row)
+        except Exception:
+            pass
+
+    return posts, seen
+
+
+def save_csv(handle: str, posts: list[dict]) -> Path:
+    """Save scraped posts to a single CSV file (overwrites previous)."""
+    DATA_DIR.mkdir(exist_ok=True)
+    filepath = DATA_DIR / f"{handle}.csv"
+
+    with open(filepath, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["text", "timestamp", "likes", "retweets", "replies"])
+        writer.writeheader()
+        for post in posts:
+            writer.writerow({
+                "text": post["text"],
+                "timestamp": post.get("timestamp", ""),
+                "likes": post.get("likes", "0"),
+                "retweets": post.get("retweets", "0"),
+                "replies": post.get("replies", "0"),
+            })
+
+    print(f"Saved {len(posts)} posts to {filepath}")
     return filepath
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if not args:
+        print("Usage: python3 -m src.scraper <handle> [max_posts] [--visible]")
+        print("  handle:    X username (without @)")
+        print("  max_posts: number of posts to scrape (default: 200)")
+        print("  --visible: show browser window")
+        print()
+        print("Run multiple times to accumulate more posts — data merges automatically.")
+        sys.exit(1)
+
+    handle = args[0].lstrip("@")
+    max_posts = 200
+    headless = True
+
+    for arg in args[1:]:
+        if arg == "--visible":
+            headless = False
+        elif arg.isdigit():
+            max_posts = int(arg)
+
+    posts = scrape_account(handle, max_posts=max_posts, headless=headless)
+    save_csv(handle, posts)
