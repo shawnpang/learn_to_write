@@ -2,7 +2,11 @@
 
 This project scrapes X (Twitter) accounts and generates "Claude Skills" — writing style guides that capture exactly how someone writes.
 
-## Setup
+## Primary deliverable
+
+`learn-to-write.md` — a portable Claude Skill that anyone can drop into their `.claude/commands/` folder. When run, it auto-clones this repo, installs dependencies, scrapes posts, and generates a writing style skill. No manual setup.
+
+## Setup (for local development)
 
 Only dependency is Playwright:
 ```bash
@@ -18,10 +22,10 @@ Each person gets their own subfolder under `data/`. Everything is tracked in git
 
 ## Slash commands
 
-- `/scrape @handle [count]` — Scrape posts, analyze style, and generate Claude Skill in one step
+- `/learn-to-write @handle [count]` — Full pipeline: scrape + analyze + generate skill (default 30 posts)
+- `/scrape @handle [count]` — Same as above (when running from inside this repo)
 - `/generate-skill @handle` — Re-generate a Claude Skill from existing scraped data
 - `/apply-skill @handle <text>` — Rewrite text using a saved Claude Skill
-- `/learn-to-write @handle [count]` — Same as `/scrape` (alias)
 
 ## File layout
 
@@ -35,6 +39,7 @@ data/
     skill.md
 ```
 
+- `learn-to-write.md` — The portable Claude Skill (main deliverable)
 - `browser_profiles/` — Persistent browser state (cookies, cache) — gitignored
 - `src/scraper.py` — Scraper entry point: `python3 -m src.scraper <handle> [max_posts] [--visible]`
 - `src/stealth.py` — Browser stealth patches and human behavior simulation
@@ -46,12 +51,12 @@ python3 -m src.scraper <handle> [max_posts] [--visible]
 ```
 
 - `handle` — X username without @
-- `max_posts` — number to scrape (default 200)
+- `max_posts` — number to scrape (default 30)
 - `--visible` — show browser window
 
 ## Important notes
 
 - The scraper NEVER logs in. It uses a fresh anonymous browser profile.
-- Images load normally (blocking is detectable).
+- Default is 30 posts to avoid getting accounts rate-limited.
 - Mouse moves on bezier curves, scrolling has natural variance, periodic breaks simulate real browsing.
 - Posts save to `data/<handle>/posts.csv`, skills save to `data/<handle>/skill.md`.

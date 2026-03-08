@@ -8,7 +8,7 @@ Scrape posts from the X account and generate a Claude Skill: $ARGUMENTS
 
 Steps:
 1. Parse the handle from the arguments. Strip any @ prefix or https://x.com/ URL prefix.
-2. Default to 200 posts if no count is specified. If the user included a number, use that.
+2. Default to 30 posts if no count is specified. If the user included a number, use that.
 3. Run the Playwright scraper:
    ```
    python3 -m src.scraper <handle> <max_posts>

@@ -8,7 +8,7 @@ Run the full learn-to-write pipeline for: $ARGUMENTS
 
 This is the all-in-one command. Steps:
 
-1. **Scrape**: Parse the handle and optional post count (default 200). Run:
+1. **Scrape**: Parse the handle and optional post count (default 30). Run:
    ```
    python3 -m src.scraper <handle> <max_posts>
    ```

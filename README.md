@@ -2,42 +2,42 @@
 
 Turn any X (Twitter) account into a reusable writing style. Scrape their posts, analyze the patterns, and generate a **Claude Skill** — a style guide that lets you write like anyone or transform any content to match their voice.
 
-Built for [Claude Code](https://claude.ai/claude-code). No API keys, no CLI to learn. Just slash commands.
+## Quick start
 
-## Setup
+Copy [`learn-to-write.md`](learn-to-write.md) into your Claude Code project's `.claude/commands/` folder:
 
 ```bash
-git clone https://github.com/shawnpang/learn_to_write.git
-cd learn_to_write
-pip install playwright && playwright install chromium
+mkdir -p .claude/commands
+curl -o .claude/commands/learn-to-write.md https://raw.githubusercontent.com/shawnpang/learn_to_write/main/learn-to-write.md
 ```
 
-That's it. Open the project in Claude Code and use the slash commands.
-
-## Usage
-
-### Full pipeline — one command
+Then in Claude Code:
 
 ```
-/learn-to-write @somehandle 300
+/learn-to-write @somehandle
 ```
 
-This scrapes 300 posts, analyzes the writing style, and generates a Claude Skill. Everything saved automatically.
+That's it. Claude will automatically clone the scraper, install Playwright, scrape posts, analyze the writing style, and generate a Claude Skill. No manual setup.
 
-### Step by step
+## How it works
+
+When you run the skill, Claude:
+
+1. **Downloads the scraper** (first run only) — clones this repo and installs Playwright
+2. **Scrapes posts** — Stealth Playwright browser collects ~30 posts with engagement data
+3. **Supplements with web search** — Finds additional posts indexed by Google
+4. **Analyzes & generates** — Reads all posts, analyzes writing patterns, generates a 9-section Claude Skill
+5. **Saves everything** — `learn_to_write/data/<handle>/posts.csv` + `learn_to_write/data/<handle>/skill.md`
 
 ```
-/scrape @somehandle 300              # Scrape + analyze + generate skill
-/generate-skill @somehandle          # Re-generate skill from existing data
-/apply-skill @somehandle "Your content here"   # Rewrite in their style
-```
-
-### What you get
-
-```
-data/somehandle/
-  posts.csv    # Raw posts with engagement metrics
-  skill.md     # The Claude Skill
+  SCRAPE + SEARCH                     ANALYZE + GENERATE
+  ───────────────                     ──────────────────
+  Playwright scraper                  Claude reads the CSV,
+  + web search fallback               analyzes all writing patterns,
+  collects posts into CSV             and generates the Claude Skill
+       │                                     │
+       ▼                                     ▼
+  data/{handle}/posts.csv                   data/{handle}/skill.md
 ```
 
 ## What's a Claude Skill?
@@ -58,51 +58,19 @@ A structured writing style guide with 9 sections:
 
 You can also paste a Claude Skill into any Claude conversation directly and it will adopt that voice.
 
-## How it works
+## If you cloned the repo directly
+
+You can also use the project's built-in slash commands:
 
 ```
-  SCRAPE + SEARCH                     ANALYZE + GENERATE
-  ───────────────                     ──────────────────
-  Playwright scraper                  Claude Code reads the CSV,
-  + web search fallback               analyzes all writing patterns,
-  collects posts into CSV             and generates the Claude Skill
-       │                                     │
-       ▼                                     ▼
-  data/{handle}/posts.csv                   data/{handle}/skill.md
+/scrape @somehandle 30               # Scrape + analyze + generate skill
+/generate-skill @somehandle          # Re-generate skill from existing data
+/apply-skill @somehandle "Your content here"   # Rewrite in their style
 ```
 
-**Stage 1: Collect posts** — Two methods, used together:
-
-1. **Playwright scraper** (`src/scraper.py` + `src/stealth.py`) — Launches stealth Chromium with persistent browser profiles, bezier mouse movement, variable scrolling, reading pauses, and human behavior simulation. Gets ~30-60 posts per session with full engagement data (likes, retweets, replies).
-
-2. **Web search supplement** — X limits anonymous browsing, so Claude Code runs web searches to find additional tweets indexed by Google. Tweet text is extracted from search result titles. This can find hundreds of posts that the scraper can't reach.
-
-Both sources merge into a single CSV. Run `/scrape` multiple times to accumulate more data.
-
-**Stage 2: Analyze + Generate** — Claude Code reads the CSV directly and does the analysis itself. No separate Python scripts, no API keys needed. Claude Code examines sentence structure, vocabulary, tone markers, formatting habits, and engagement patterns across all posts, then synthesizes a Claude Skill with concrete rewrite rules and example transformations.
-
-## Project structure
-
-```
-learn_to_write/
-├── CLAUDE.md                        # Project instructions for Claude Code
-├── README.md
-├── requirements.txt                 # Just playwright
-├── .claude/commands/
-│   ├── scrape.md                    # /scrape @handle [count]
-│   ├── generate-skill.md           # /generate-skill @handle
-│   ├── apply-skill.md              # /apply-skill @handle <text>
-│   └── learn-to-write.md           # /learn-to-write @handle [count]
-├── src/
-│   ├── __init__.py
-│   ├── scraper.py                   # Playwright scraper, outputs CSV
-│   └── stealth.py                   # Browser stealth + human simulation
-├── data/                            # One subfolder per person (posts.csv + skill.md)
-│   ├── zarazhangrui/
-│   │   ├── posts.csv
-│   │   └── skill.md
-│   └── ...
-└── browser_profiles/                # Persistent browser state (gitignored)
+Setup:
+```bash
+pip install playwright && playwright install chromium
 ```
 
 ## How the scraper avoids detection

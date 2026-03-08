@@ -65,7 +65,7 @@ def _extract_posts(page) -> list[dict]:
 
 def scrape_account(
     handle: str,
-    max_posts: int = 200,
+    max_posts: int = 30,
     headless: bool = True,
     scroll_pause: float = 2.0,
 ) -> list[dict]:
@@ -251,14 +251,14 @@ if __name__ == "__main__":
     if not args:
         print("Usage: python3 -m src.scraper <handle> [max_posts] [--visible]")
         print("  handle:    X username (without @)")
-        print("  max_posts: number of posts to scrape (default: 200)")
+        print("  max_posts: number of posts to scrape (default: 30)")
         print("  --visible: show browser window")
         print()
         print("Run multiple times to accumulate more posts — data merges automatically.")
         sys.exit(1)
 
     handle = args[0].lstrip("@")
-    max_posts = 200
+    max_posts = 30
     headless = True
 
     for arg in args[1:]:
